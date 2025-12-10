@@ -1,0 +1,7 @@
+tavily-python
+tavily-python
+google-generativeai
+crawl4ai
+resend
+markdown
+python-dotenv
