@@ -21,5 +21,5 @@ TRUSTED_SOURCES = [
 SEARCH_TOPIC = "Rodadas de investimento Seed e Pre-seed startups Brasil, novas startups brasileiras tecnologia, aportes venture capital brasil"
 
 # Configuração de E-mail
-EMAIL_TO = ["cauaedmj5@gmail.com"]
+EMAIL_TO = ["cauaedm@dcc.ufrj.br"]
 EMAIL_SUBJECT = "🚀 VC Daily: Oportunidades Seed/Pre-Seed Brasil"
