@@ -2,7 +2,7 @@
 
 # Lista branca de domínios. Foco em BR e Tech Global relevante.
 TRUSTED_SOURCES = [
-    "https://startups.com.br/",
+    "startups.com.br",
     "braziljournal.com",
     "neofeed.com.br",
     "exame.com/bussola",
@@ -13,7 +13,7 @@ TRUSTED_SOURCES = [
     "forbes.com.br/forbes-tech",
     "baguete.com.br",
     "tiinside.com.br",
-    "techcrunch.com", 
+    "techcrunch.com",
     "news.ycombinator.com"
 ]
 
