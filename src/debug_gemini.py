@@ -16,7 +16,7 @@ def verify_gemini():
 
     genai.configure(api_key=api_key)
     
-    model_name = 'gemma-3-12b-it'
+    model_name = 'gemini-2.5-flash'
     print(f"👉 Conectando ao modelo: {model_name}")
 
     try:

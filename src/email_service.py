@@ -133,7 +133,7 @@ def send_daily_briefing(content_markdown, recipients):
     """
 
     params = {
-        "from": "Intelligence Bot <onboarding@resend.dev>", # Configure seu domínio no Resend depois
+        "from": "Intelligence Bot <crivoai@crivoventures.com.br>", # Configure seu domínio no Resend depois
         "to": recipients,
         "subject": f"Briefing: {datetime.now().strftime('%d/%m')}",
         "html": full_html

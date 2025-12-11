@@ -1,19 +1,21 @@
 import asyncio
 import os
-import json
 import logging
 import sys
 import google.generativeai as genai
 from tavily import TavilyClient
 from crawl4ai import AsyncWebCrawler
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil import parser
 from config import TRUSTED_SOURCES, SEARCH_TOPIC, EMAIL_TO, EMAIL_SUBJECT
 from email_service import send_daily_briefing
 from dotenv import load_dotenv
 import textwrap
 
 # Load environment variables
-load_dotenv()
+# Assumes .env is in the parent directory (project root)
+basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(basedir, '.env'))
 
 # Configure Logging
 logging.basicConfig(
@@ -25,6 +27,7 @@ logging.basicConfig(
     ]
 )
 
+
 def configure_gemini():
     """Configures the Gemini API."""
     api_key = os.getenv("GEMINI_API_KEY")
@@ -32,135 +35,121 @@ def configure_gemini():
         logging.error("GEMINI_API_KEY not found in environment variables.")
         sys.exit(1)
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemma-3-12b-it')
+    return genai.GenerativeModel('gemini-2.5-flash')
 
-def search_per_source(client, topic, sources, days=1):
+def search_news(client, topic, sources):
     """
-    Searches for the topic in each trusted source individually to ensure variety.
-    Returns a list of candidate articles.
+    Performs a single search restricted to trusted domains and strict date limits.
     """
-    candidates = []
-    logging.info(f"🔍 Starting Per-Source Search for topic: '{topic}'")
+    logging.info(f"🔍 Searching for topic: '{topic}' in {len(sources)} sources...")
+    
+    try:
+        response = client.search(
+            query=topic,
+            topic="news",
+            days=2, # Ask Tavily for last 48h
+            include_domains=sources,
+            max_results=20 # Get a good pool to filter from
+        )
+        return response.get('results', [])
+    except Exception as e:
+        logging.error(f"❌ Search failed: {e}")
+        return []
 
-    for source in sources:
+def filter_by_date(results):
+    """
+    Strictly filters articles to only match Today or Yesterday's date.
+    Parses 'published_date' from Tavily.
+    """
+    logging.info(f"🕵️ Filtering {len(results)} articles by date (Today/Yesterday only)...")
+    
+    today = datetime.now().date()
+    yesterday = today - timedelta(days=1)
+    
+    valid_articles = []
+    
+    for article in results:
+        pub_date_str = article.get('published_date')
+        title = article.get('title', 'No Title')
+        
+        if not pub_date_str:
+            logging.info(f"   🗑️ Skipped (No Date): {title}")
+            continue
+            
         try:
-            # Construct a site-specific query
-            query = f"site:{source} {topic}"
-            logging.info(f"   👉 Searching in: {source}...")
+            # Robust parsing with dateutil
+            article_date = parser.parse(pub_date_str).date()
             
-            response = client.search(
-                query=query,
-                topic="news",
-                days=days,
-                max_results=5  # Get top 5 per source
-            )
-            
-            for result in response.get('results', []):
-                # Add source metadata to help the filter agent
-                result['source_domain'] = source
-                candidates.append(result)
+            if article_date == today or article_date == yesterday:
+                logging.info(f"   ✅ Keep ({article_date}): {title}")
+                valid_articles.append(article)
+            else:
+                logging.info(f"   🗑️ Skipped (Old: {article_date}): {title}")
                 
-        except Exception as e:
-            logging.warning(f"⚠️ Error searching {source}: {e}")
+        except (ValueError, TypeError) as e:
+            logging.warning(f"   ⚠️ Date Parse Error ({pub_date_str}): {e}")
             continue
 
-    logging.info(f"✅ Aggregated {len(candidates)} candidate articles from {len(sources)} sources.")
-    return candidates
+    logging.info(f"✅ Kept {len(valid_articles)} fresh articles.")
+    return valid_articles
 
-def filter_candidates(model, candidates):
-    """
-    Agent 1: The Editor.
-    Uses Gemini to select the top 5 distinct stories based on title and snippet.
-    """
-    logging.info("🕵️ Agent 1 (Editor): Filtering top 5 candidates...")
-    
-    # Prepare the list for the LLM
-    candidates_list_str = ""
-    for i, c in enumerate(candidates):
-        candidates_list_str += f"ID {i}: Title: {c['title']} | Source: {c['source_domain']} | Snippet: {c['content']} | URL: {c['url']}\n\n"
+async def crawl_urls(articles):
+    """Crawls valid articles using Crawl4AI."""
+    if not articles:
+        return []
 
-    prompt = f"""
-    You are a Senior Venture Capital Editor specializing in the Brazilian market.
-    Your task is to select the **5 most important and distinct** news stories from the list below.
-
-    **Selection Criteria:**
-    1.  **Relevance**: Must be about **New Investments (Seed/Pre-Seed)**, **New Startups**, or **M&A** in Brazil/LatAm.
-    2.  **Variety**: Prioritize selecting stories from **different sources**. Do not pick multiple stories about the exact same deal unless it adds significant new info.
-    3.  **Freshness**: Ensure they look like recent news.
-
-    **Candidates:**
-    {candidates_list_str}
-
-    **Output Format:**
-    Return ONLY a raw JSON array of integers representing the IDs of the selected articles.
-    Example: [0, 5, 12, 18, 22]
-    """
-
-    try:
-        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
-        selected_ids = json.loads(response.text)
-        
-        # Validate selection
-        if not isinstance(selected_ids, list):
-            raise ValueError("Output is not a list")
-            
-        selected_articles = [candidates[i] for i in selected_ids if 0 <= i < len(candidates)]
-        logging.info(f"✅ Editor selected {len(selected_articles)} articles.")
-        return selected_articles
-
-    except Exception as e:
-        logging.error(f"❌ Filtering Agent failed: {e}")
-        # Fallback: Just return the first 5 unique URLs
-        logging.info("⚠️ Fallback: Selecting first 5 unique articles.")
-        seen_urls = set()
-        selected = []
-        for c in candidates:
-            if c['url'] not in seen_urls:
-                selected.append(c)
-                seen_urls.add(c['url'])
-            if len(selected) >= 5:
-                break
-        return selected
-
-async def crawl_urls(urls):
-    """Crawls specific URLs using Crawl4AI."""
+    urls = [a['url'] for a in articles]
     logging.info(f"🕷️ Crawling {len(urls)} selected URLs...")
-    results = []
+    
+    crawled_results = []
     async with AsyncWebCrawler(verbose=True) as crawler:
-        for url in urls:
+        for article in articles:
+            url = article['url']
             try:
                 result = await crawler.arun(url=url)
                 if result.success:
                     # Limit content size for LLM context
                     content_snippet = result.markdown[:6000] 
-                    results.append({"url": url, "content": content_snippet})
+                    # Merge crawl content with metadata
+                    article['content'] = content_snippet
+                    crawled_results.append(article)
                     logging.info(f"   ✅ Crawled: {url}")
                 else:
                     logging.error(f"   ❌ Failed to crawl {url}: {result.error_message}")
             except Exception as e:
                 logging.error(f"   ⚠️ Error processing {url}: {e}")
-    return results
+    return crawled_results
 
 def generate_newsletter(model, articles):
     """
-    Agent 2: The Reporter.
-    Summarizes the crawled content into a structured newsletter.
+    Summarizes the crawled content.
     """
-    logging.info("✍️ Agent 2 (Reporter): Generating newsletter...")
+    logging.info("✍️ Write Agent: Generating newsletter...")
     
+    if not articles:
+        return "⚠️ No fresh news found today."
+
     articles_text = ""
     for i, article in enumerate(articles):
-        articles_text += f"\n\n--- Article {i+1} ({article['url']}) ---\n{article['content']}"
+        # We trust the date pre-filter, but provide context just in case
+        articles_text += f"\n\n--- Article {i+1} ---\nTitle: {article['title']}\nDate: {article.get('published_date')}\nURL: {article['url']}\nContent: {article.get('content', '')[:3000]}"
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
 
     prompt = f"""
     Act as a senior VC analyst for the Brazilian market.
-    Analyze the following articles and write a Weekly Daily Briefing.
+    **TODAY'S DATE:** {today_str}
 
+    Analyze the following **FRESH** articles and write a Weekly Daily Briefing.
+    
+    **Instructions:**
+    - These articles have already been filtered for date. Assume they are relevant.
+    - If an article turns out to be irrelevant (ads, privacy policies), ignore it.
+    
     **Format constraints:**
     - Use Markdown.
     - Group by Deal/Startup.
     - Extract: Founders, VCs, Valuation (if available).
-    - If a story is not about a deal (e.g. general market analysis), summarize the key insight.
     
     **Output Style:**
     ### 🇧🇷 [Startup Name] - [Round Type / News Type]
@@ -181,63 +170,57 @@ def generate_newsletter(model, articles):
         return response.text
     except Exception as e:
         logging.error(f"❌ Writer Agent failed: {e}")
-        return "⚠️ Error generating summary. See raw links below."
+        return "⚠️ Error generating summary."
 
 async def run_pipeline(dry_run=False):
-    logging.info(f"🚀 Starting Agentic VC News Pipeline {'[DRY RUN]' if dry_run else ''}")
+    logging.info(f"🚀 Starting Simplified VC News Pipeline {'[DRY RUN]' if dry_run else ''}")
     
     # Setup
     model = configure_gemini()
     tavily_key = os.getenv("TAVILY_API_KEY")
+    
     if not tavily_key and not dry_run:
          logging.error("TAVILY_API_KEY missing.")
          return
 
-    # 1. Search (Per Source)
+    # 1. Search (Single Call)
     if dry_run:
-        logging.info("🔍 [DRY RUN] Skipping Search.")
-        candidates = [
-            {"title": "Startup A Raises Seed", "url": "http://mock.com/a", "content": "Startup A receives $2M", "source_domain": "mock.com"},
-            {"title": "Startup B Pre-Seed", "url": "http://mock.com/b", "content": "Startup B launched", "source_domain": "mock.com"},
-            # Add more mocks to test filter if needed
+        logging.info("🔍 [DRY RUN] Mocking Search.")
+        # Mocking 1 fresh and 1 old article
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        old_str = "2023-01-01"
+        raw_results = [
+            {"title": "Fresh Startup Raise", "url": "http://mock.com/fresh", "published_date": today_str},
+            {"title": "Old Startup News", "url": "http://mock.com/old", "published_date": old_str}
         ]
     else:
         tavily = TavilyClient(api_key=tavily_key)
-        candidates = search_per_source(tavily, SEARCH_TOPIC, TRUSTED_SOURCES)
+        raw_results = search_news(tavily, SEARCH_TOPIC, TRUSTED_SOURCES)
 
-    if not candidates:
-        logging.warning("❌ No candidates found.")
+    if not raw_results:
+        logging.warning("❌ No results found from Tavily.")
         return
 
-    # 2. Filter (Agent 1)
-    if dry_run:
-        logging.info("🕵️ [DRY RUN] Skipping Filter.")
-        selected_candidates = candidates[:2]
-    else:
-        selected_candidates = filter_candidates(model, candidates)
-
-    if not selected_candidates:
-        logging.warning("❌ No candidates selected by Editor.")
+    # 2. Strict Date Filter
+    valid_articles = filter_by_date(raw_results)
+    
+    if not valid_articles:
+        logging.warning("❌ No articles matched the date criteria (Today/Yesterday).")
+        # In production, we might want to send a "No News" email, or just exit.
+        # For now, let's exit but log loudly.
         return
 
     # 3. Crawl
-    urls_to_crawl = [c['url'] for c in selected_candidates]
     if dry_run:
-        logging.info("🕷️ [DRY RUN] Skipping Crawl.")
-        crawled_data = [{"url": u, "content": "Mock content for summary."} for u in urls_to_crawl]
+        logging.info("🕷️ [DRY RUN] Mocking Crawl.")
+        crawled_data = valid_articles
+        for a in crawled_data:
+            a['content'] = "Mock content about a $5M seed round."
     else:
-        crawled_data = await crawl_urls(urls_to_crawl)
+        crawled_data = await crawl_urls(valid_articles)
 
-    # 4. Write (Agent 2)
-    if dry_run:
-        newsletter_md = textwrap.dedent("""
-            ### 🇧🇷 [MOCK] Startup A - Seed
-            - **The Deal:** Raises $2M.
-            - **Business:** Something AI.
-            - [Read Source](http://mock.com/a)
-        """)
-    else:
-        newsletter_md = generate_newsletter(model, crawled_data)
+    # 4. Write
+    newsletter_md = generate_newsletter(model, crawled_data)
 
     # 5. Send
     logging.info("📧 Sending Email...")
@@ -250,7 +233,7 @@ async def run_pipeline(dry_run=False):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("--dry-run", action="store_true")
+    args = arg_parser.parse_args()
     asyncio.run(run_pipeline(args.dry_run))
