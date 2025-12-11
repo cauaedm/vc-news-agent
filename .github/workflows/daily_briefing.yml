@@ -2,8 +2,8 @@ name: VC Daily Briefing
 
 on:
   schedule:
-    # Roda às 18:00 BRT (21:00 UTC) de Seg a Sex
-    - cron: '0 21 * * 1-5'
+    # Roda às 08:00 BRT (11:00 UTC) de Seg a Sex
+    - cron: '0 11 * * 1-5'
   workflow_dispatch: # Botão para rodar manualmente se quiser testar
 
 jobs:
