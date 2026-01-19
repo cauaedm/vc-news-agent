@@ -1,0 +1,36 @@
+Full structure of first feed-post:
+<div class="feed-post bstn-item-shape type-materia" id="eb35a7273923f9339a6c6d314dd014d9">
+ <div class="feed-post-body">
+  <div class="feed-post-header">
+  </div>
+  <div class="feed-post-body-title gui-color-primary gui-color-hover" ref="[object Object]">
+   <div class="_b">
+    <h2 class="feed-post-link gui-color-primary gui-color-hover">
+     <a class="feed-post-link" elementtiming="text-csr" href="https://revistapegn.globo.com/startups/noticia/2026/01/deeptechs-ganham-espaco-no-brasil-mas-esbarram-na-falta-de-investidores.ghtml">
+      Deeptechs ganham espaço no Brasil, mas esbarram na falta de investidores
+     </a>
+    </h2>
+   </div>
+  </div>
+  <p class="feed-post-body-resumo" elementtiming="text-csr" ref="[object Object]">
+   Startups de base científica crescem no país e transformam pesquisa em empresas, mas ainda enfrentam escassez de capital privado
+  </p>
+  <div class="feed-media-wrapper">
+   <a class="feed-post-figure-link gui-image-hover" href="https://revistapegn.globo.com/startups/noticia/2026/01/deeptechs-ganham-espaco-no-brasil-mas-esbarram-na-falta-de-investidores.ghtml" ref="[object Object]">
+    <div class="bstn-fd-item-cover">
+     <picture class="bstn-fd-cover-picture">
+      <img alt="Deeptechs ganham espaço no Brasil, mas esbarram na falta de investidores" class="bstn-fd-picture-image" elementtiming="image-csr" loading="lazy" src="https://s2-pegn.glbimg.com/rvacHHEtD2tM-5V8e74gMU3jKtY=/540x304/top/smart/https://i.s3.glbimg.com/v1/AUTH_ba41d7b1ff5f48b28d3c5f84f30a06af/internal_photos/bs/2025/9/a/Nb4hksS2ypzH2p1XjCUQ/deeptechs-.jpg" srcset="https://s2-pegn.glbimg.com/rvacHHEtD2tM-5V8e74gMU3jKtY=/540x304/top/smart/https://i.s3.glbimg.com/v1/AUTH_ba41d7b1ff5f48b28d3c5f84f30a06af/internal_photos/bs/2025/9/a/Nb4hksS2ypzH2p1XjCUQ/deeptechs-.jpg 1x,https://s2-pegn.glbimg.com/XjgUdtjqsbuKJmvgve4_oAl990U=/810x456/top/smart/https://i.s3.glbimg.com/v1/AUTH_ba41d7b1ff5f48b28d3c5f84f30a06af/internal_photos/bs/2025/9/a/Nb4hksS2ypzH2p1XjCUQ/deeptechs-.jpg 1.5x,https://s2-pegn.glbimg.com/D91f0oH5Z14UNm6sUiVrzL2G0mY=/1080x608/top/smart/https://i.s3.glbimg.com/v1/AUTH_ba41d7b1ff5f48b28d3c5f84f30a06af/internal_photos/bs/2025/9/a/Nb4hksS2ypzH2p1XjCUQ/deeptechs-.jpg 2x" title="Deeptechs ganham espaço no Brasil, mas esbarram na falta de investidores"/>
+     </picture>
+    </div>
+   </a>
+  </div>
+  <div class="feed-post-metadata">
+   <span class="feed-post-datetime">
+    Há 3 horas
+   </span>
+   <span class="feed-post-metadata-section">
+    Startups
+   </span>
+  </div>
+ </div>
+</div>

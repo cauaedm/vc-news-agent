@@ -1,0 +1,52 @@
+Found 88 elements with 'feed-post' in class.
+First item structure:
+<div class="feed-post bstn-item-shape type-materia" id="eb35a7273923f9339a6c6d314dd014d9">
+ <div class="feed-post-body">
+  <div class="feed-post-header">
+  </div>
+  <div class="feed-post-body-title gui-color-primary gui-color-hover" ref="[object Object]">
+   <div class="_b">
+    <h2 class="feed-post-link gui-color-primary gui-color-hover">
+     <a class="feed-post-link" elementtiming="text-csr" href="https://revistapegn.globo.com/startups/noticia/2026/01/deeptechs-ganham-espaco-no-brasil-mas-esb
+Found 10 elements with 'bastian-feed-item' in class.
+Found <main> tag.
+Classes in main: ['investe__main', 'grid-container', 'subhome']
+Children of <main>:
+  div class=['menu-tematico']
+  style class=None
+  div class=['row', 'small-collapse', 'large-uncollapse']
+  div class=['feed-bastian-container', 'grid-x']
+Children of <body>:
+  script class=None
+  div class=['pages-header', 'no-bar']
+  style class=None
+  div class=None
+  main class=['investe__main', 'grid-container', 'subhome']
+  div class=['pages-footer']
+  script class=None
+  script class=None
+  script class=None
+  script class=None
+  script class=None
+  link class=None
+  noscript class=None
+  script class=None
+  script class=None
+  script class=None
+  script class=None
+  script class=None
+  div class=['searchV2']
+  script class=None
+  script class=None
+  script class=None
+  noscript class=None
+  iframe class=None
+  div class=['barreiraJornada']
+  div class=['mobiliarioFooter']
+  div class=['naoBarreiraOnboarding']
+  div class=['mobiliarioAdblock']
+  div class=['mobiliarioNaoBarreira']
+  div class=['mobiliarioSlideBanner']
+  div class=['mobiliarioModalInformativo']
+  iframe class=None
+  iframe class=None

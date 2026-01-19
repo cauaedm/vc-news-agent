@@ -1,0 +1,35 @@
+✅ Crawl Successful!
+
+--- Metadata Attribute ---
+{
+  "title": "Brasil domina ranking de ecossistemas de inovação na América Latina - Startups",
+  "description": "País manteve 27º lugar global, mas mais de 60% dos ecossistemas de inovação cresceram e país saltou de 25 para 28 cidades no Top 1000",
+  "keywords": null,
+  "author": "Leandro Miguel Souza",
+  "og:locale": "pt_BR",
+  "og:type": "article",
+  "og:title": "Brasil domina ranking de ecossistemas de inovação na América Latina - Startups",
+  "og:description": "País manteve 27º lugar no ranking global, mas mais de 60% dos ecossistemas locais cresceram e país saltou de 25 para 28 cidades no Top 1000",
+  "og:url": "https://startups.com.br/negocios/inovacao/brasil-domina-ranking-de-ecossistemas-de-inovacao-na-america-latina/",
+  "og:site_name": "Startups",
+  "og:image": "https://uploads.startups.com.br/2025/05/Creators-10.webp",
+  "og:image:width": "1078",
+  "og:image:height": "627",
+  "og:image:type": "image/png",
+  "twitter:card": "summary_large_image",
+  "twitter:title": "Brasil domina ranking de ecossistemas de inovação na América Latina - Startups",
+  "twitter:description": "País manteve 27º lugar no ranking global, mas mais de 60% dos ecossistemas locais cresceram e país saltou de 25 para 28 cidades no Top 1000",
+  "twitter:image": "https://uploads.startups.com.br/2025/05/Creators-10.webp",
+  "twitter:label1": "Escrito por",
+  "twitter:data1": "Leandro Miguel Souza",
+  "twitter:label2": "Est. tempo de leitura",
+  "twitter:data2": "4 minutos",
+  "twitter:label3": "Written by",
+  "twitter:data3": "Leandro Miguel Souza",
+  "article:published_time": "2025-05-21T19:07:35+00:00",
+  "article:modified_time": "2025-05-22T06:25:37+00:00"
+}
+
+--- Result Object Attributes ---
+_is_protocol: False
+_results: [CrawlResult(url='https://startups.com.br/negocios/inovacao/brasil-domina-ranking-de-ecossistemas-de-inovacao-na-america-latina/', html='<!DOCTYPE html><html lang="pt-BR"><head>\n\t\t<meta charset="UTF-8">\n\t\t<meta name="viewport" content="width=device-width, initial-scale=1">\n\t\t<link rel="profile" href="https://gmpg.org/xfn/11">\n\t\t<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">\n\t<style>img:is([sizes="auto" i], [sizes^="auto,"

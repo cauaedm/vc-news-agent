@@ -23,7 +23,7 @@ def test_gemini():
     print("\n🧠 Testing Gemini API...")
     try:
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content("Say 'Hello' if you are working.")
         print(f"✅ Gemini OK! Response: {response.text}")
     except Exception as e:

@@ -5,3 +5,4 @@ resend
 markdown
 python-dotenv
 python-dateutil
+beautifulsoup4
