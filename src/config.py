@@ -12,5 +12,5 @@ TRUSTED_SOURCES = [
 SEARCH_TOPIC = "Startups brasileira"
 
 # Configuração de E-mail
-EMAIL_TO = ["caua@crivo.ventures"]
+EMAIL_TO = ["caua@crivo.ventures", "sergio@crivo.ventures", "andrea@crivo.ventures"]
 EMAIL_SUBJECT = "🚀 VC Daily: Oportunidades Seed/Pre-Seed Brasil"

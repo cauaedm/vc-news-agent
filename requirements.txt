@@ -1,5 +1,5 @@
 tavily-python
-google-generativeai
+openai
 crawl4ai
 resend
 markdown

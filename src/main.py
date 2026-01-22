@@ -2,7 +2,7 @@ import asyncio
 import os
 import logging
 import sys
-import google.generativeai as genai
+from openai import OpenAI
 from crawl4ai import AsyncWebCrawler
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -33,14 +33,13 @@ logging.basicConfig(
 )
 
 
-def configure_gemini():
-    """Configures the Gemini API."""
-    api_key = os.getenv("GEMINI_API_KEY")
+def configure_openai():
+    """Configures the OpenAI API."""
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        logging.error("GEMINI_API_KEY not found in environment variables.")
+        logging.error("OPENAI_API_KEY not found in environment variables.")
         sys.exit(1)
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemma-3-12b')
+    return OpenAI(api_key=api_key)
 
 def parse_relative_date(date_str):
     """
@@ -269,9 +268,17 @@ def analyze_relevance(model, article):
     """
     
     try:
-        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        response = model.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that responds in JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0
+        )
         import json
-        result = json.loads(response.text)
+        result = json.loads(response.choices[0].message.content)
         return result.get("is_relevant", False), result.get("reason", "No reason provided")
     except Exception as e:
         logging.warning(f"   ⚠️ Relevance check failed (assuming relevant): {e}")
@@ -324,8 +331,14 @@ def generate_newsletter(model, articles):
     """
     
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        response = model.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a senior VC analyst."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
     except Exception as e:
         logging.error(f"❌ Writer Agent failed: {e}")
         return "⚠️ Error generating summary."
@@ -334,7 +347,7 @@ async def run_pipeline(dry_run=False):
     logging.info(f"🚀 Starting Simplified VC News Pipeline {'[DRY RUN]' if dry_run else ''}")
     
     # Setup
-    model = configure_gemini()
+    model = configure_openai()
     # 1. Gather (Scrapers)
     if dry_run:
         logging.info("🔍 [DRY RUN] Mocking Scrapers.")
