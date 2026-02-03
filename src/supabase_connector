@@ -1,0 +1,112 @@
+from supabase import create_client, Client
+from typing import List
+from src.core.settings import settings
+from src.core.logger import logger
+from src.domain.models import CalendarEvent, SyncResult
+
+class SupabaseConnector:
+    def __init__(self):
+        self._client: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        # User confirmed Supabase table name matches Airtable: "Outlook Calendar"
+        self._table = "Outlook Calendar"
+
+    def upsert_events(self, events: List[CalendarEvent]) -> SyncResult:
+        """Synchronizes a list of events to Supabase via Upsert."""
+        result = SyncResult(user_email=events[0].target_email if events else "unknown")
+        
+        if not events:
+            return result
+            
+        logger.info(f"Iniciando sincronização para Supabase ({len(events)} eventos)...")
+        
+        # Prepare data for batch upsert using Airtable Column Names (as requested by User)
+        data_payload = []
+        for event in events:
+            result.processed_count += 1
+            data_payload.append({
+                "Outlook ID": event.outlook_id,
+                "Título": event.subject,
+                "Início": event.start.isoformat(),
+                "Fim": event.end.isoformat(),
+                "Organizador": event.organizer_name,
+                "Email Alvo": event.target_email,
+                # Supabase can accept extra fields if they exist, or we can add created_at if needed manually
+            })
+            
+        try:
+            # Supabase upsert (on conflict "Outlook ID")
+            # Note: Ensure the primary key in Supabase is set to "Outlook ID"
+            response = self._client.table(self._table).upsert(data_payload).execute()
+            
+            if response.data:
+                count = len(response.data)
+                logger.info(f"Supabase Upsert com sucesso: {count} registros.")
+                result.updated_count = count 
+            else:
+                logger.warning("Supabase Upsert retornou lista vazia (nenhum erro explícito).")
+
+        except Exception as e:
+            logger.error(f"Erro no Supabase Upsert: {e}")
+            result.error_count += len(events)
+            
+        return result
+
+    def fetch_events_range(self, target_email: str, start_date: str, end_date: str) -> List[dict]:
+        """
+        Fetches events within a specific date range [start, end].
+        """
+        logger.info(f"Buscando eventos no Supabase para {target_email} entre {start_date} e {end_date}...")
+
+        try:
+            # Using Airtable column names in filters: 'Início'
+            response = self._client.table(self._table)\
+                .select("*")\
+                .eq("Email Alvo", target_email)\
+                .gte("Início", start_date)\
+                .lte("Início", end_date)\
+                .execute()
+            
+            # Normalize
+            normalized = []
+            for item in (response.data or []):
+                normalized.append({
+                    "subject": item.get("Título"),
+                    "start_time": item.get("Início"),
+                    "outlook_id": item.get("Outlook ID")
+                })
+            
+            return normalized
+        except Exception as e:
+            logger.error(f"Erro ao buscar eventos range no Supabase: {e}")
+            return []
+
+    def fetch_readai_transcripts(self, lookback_days: int = 7, start_date: str = None) -> List[dict]:
+        """
+        Fetches transcripts from Supabase. 
+        If start_date is provided, uses it. Else uses lookback_days.
+        """
+        from datetime import datetime, timedelta
+        
+        if not start_date:
+            start_date = (datetime.now() - timedelta(days=lookback_days)).isoformat()
+        
+        logger.info(f"Buscando transcripts no Supabase desde {start_date}...")
+        
+        try:
+            response = self._client.table("ReadAI Transcripts")\
+                .select("*")\
+                .gte("Date", start_date)\
+                .execute()
+                
+            results = []
+            for item in (response.data or []):
+                results.append({
+                    "title": item.get("Transcript Name") or item.get("Name"),
+                    "date": item.get("Date"),
+                })
+            return results
+        except Exception as e:
+            logger.error(f"Erro ao buscar transcripts no Supabase: {e}")
+            return []
+
+

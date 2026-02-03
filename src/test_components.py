@@ -1,6 +1,6 @@
 # src/test_components.py
 import os
-from openai import OpenAI
+import google.generativeai as genai
 from tavily import TavilyClient
 import resend
 from dotenv import load_dotenv
@@ -19,19 +19,17 @@ def test_tavily():
     except Exception as e:
         print(f"❌ Tavily Error: {e}")
 
-def test_openai():
-    print("\n🧠 Testing OpenAI API...")
+def test_gemini():
+    print("\n🧠 Testing Gemini API...")
     try:
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Say 'Hello' if you are working."}]
-        )
-        print(f"✅ OpenAI OK! Response: {response.choices[0].message.content}")
+        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = model.generate_content("Say 'Hello' if you are working.")
+        print(f"✅ Gemini OK! Response: {response.text}")
     except Exception as e:
-        print(f"❌ OpenAI Error: {e}")
+        print(f"❌ Gemini Error: {e}")
         # Log error to file for inspection
-        with open("openai_error.txt", "w", encoding="utf-8") as f:
+        with open("gemini_error.txt", "w", encoding="utf-8") as f:
             f.write(str(e))
 
 def test_resend_config():
@@ -46,5 +44,5 @@ def test_resend_config():
 if __name__ == "__main__":
     print("🚀 Starting Component Tests...")
     test_tavily()
-    test_openai()
+    test_gemini()
     test_resend_config()

@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from openai import OpenAI
+import google.generativeai as genai
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 from src.main import analyze_relevance
@@ -9,8 +9,9 @@ from src.main import analyze_relevance
 # Setup
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
-api_key = os.getenv("OPENAI_API_KEY")
-model = OpenAI(api_key=api_key)
+api_key = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Test Cases
 articles = [

@@ -7,7 +7,7 @@ Este documento descreve como o agente de inteligência de VC opera, detalhando a
 1. **Github Actions** inicia o processo (agendamento).
 2. **Tavily** busca notícias relevantes.
 3. **Crawl4AI** acessa e lê o conteúdo das páginas.
-4. **OpenAI** analisa e escreve a newsletter.
+4. **Gemini** analisa e escreve a newsletter.
 5. **Resend** formata e envia o e-mail.
 
 ---
@@ -49,12 +49,12 @@ O **Crawl4AI** é o componente de navegação que acessa cada link aprovado para
     - Limita o conteúdo (ex: 6000 caracteres) para otimizar o processamento da IA.
 - **Saída**: O conteúdo textual completo de cada notícia validada.
 
-## 4. OpenAI (Inteligência e Redação)
+## 4. Gemini (Inteligência e Redação)
 
-O **OpenAI (GPT-4o-mini)** é o "analista sênior" que lê o conteúdo bruto e escreve o relatório final.
+O **Gemini (Google DeepMind)** é o "analista sênior" que lê o conteúdo bruto e escreve o relatório final.
 
 - **Função**: `generate_newsletter` em `src/main.py`.
-- **Modelo**: `gpt-4o-mini` (rápido e eficiente).
+- **Modelo**: `gemini-2.5-flash` (rápido e eficiente).
 - **Processo**:
     - Recebe o texto de todas as notícias raspadas.
     - Segue um prompt complexo para atuar como analista de VC.
