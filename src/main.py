@@ -2,7 +2,7 @@ import asyncio
 import os
 import logging
 import sys
-import google.generativeai as genai
+from openai import OpenAI
 from crawl4ai import AsyncWebCrawler
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -33,14 +33,13 @@ logging.basicConfig(
 )
 
 
-def configure_gemini():
-    """Configures the Gemini API."""
-    api_key = os.getenv("GEMINI_API_KEY")
+def configure_openai():
+    """Configures the OpenAI API."""
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        logging.error("GEMINI_API_KEY not found in environment variables.")
+        logging.error("OPENAI_API_KEY not found in environment variables.")
         sys.exit(1)
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemma-3-12b')
+    return OpenAI(api_key=api_key)
 
 def parse_relative_date(date_str):
     """
@@ -228,7 +227,7 @@ def filter_crawled_by_date(articles):
 
     return valid_articles
 
-def analyze_relevance(model, article):
+def analyze_relevance(client, article):
     """
     Uses LLM to check if the article is TRULY relevant for VC/Startup deals in Brazil.
     Returns: (bool, reason)
@@ -269,16 +268,23 @@ def analyze_relevance(model, article):
     """
     
     try:
-        response = model.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that analyzes news relevance. You process JSON output."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"}
+        )
         import json
-        result = json.loads(response.text)
+        result = json.loads(response.choices[0].message.content)
         return result.get("is_relevant", False), result.get("reason", "No reason provided")
     except Exception as e:
         logging.warning(f"   ⚠️ Relevance check failed (assuming relevant): {e}")
         # Fail safe: keep it if we can't check
         return True, "Error in check"
 
-def generate_newsletter(model, articles):
+def generate_newsletter(client, articles):
     """
     Summarizes the crawled content.
     """
@@ -324,8 +330,14 @@ def generate_newsletter(model, articles):
     """
     
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a senior VC analyst generating a structured newsletter."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
     except Exception as e:
         logging.error(f"❌ Writer Agent failed: {e}")
         return "⚠️ Error generating summary."
@@ -334,7 +346,7 @@ async def run_pipeline(dry_run=False):
     logging.info(f"🚀 Starting Simplified VC News Pipeline {'[DRY RUN]' if dry_run else ''}")
     
     # Setup
-    model = configure_gemini()
+    client = configure_openai()
     # 1. Gather (Scrapers)
     if dry_run:
         logging.info("🔍 [DRY RUN] Mocking Scrapers.")
@@ -382,7 +394,7 @@ async def run_pipeline(dry_run=False):
         logging.info("🧠 Running AI Relevance Filter...")
         final_articles = []
         for article in crawled_data:
-            is_relevant, reason = analyze_relevance(model, article)
+            is_relevant, reason = analyze_relevance(client, article)
             if is_relevant:
                 logging.info(f"   ✅ Relevant: {article['title']} ({reason})")
                 final_articles.append(article)
@@ -394,7 +406,7 @@ async def run_pipeline(dry_run=False):
         return
 
     # 5. Write
-    newsletter_md = generate_newsletter(model, final_articles)
+    newsletter_md = generate_newsletter(client, final_articles)
 
     # 6. Send
     if not dry_run and not args.no_email:
